@@ -11,5 +11,4 @@ wheels/
 .env
 
 .vscode
-uv.lock
 .python-version
