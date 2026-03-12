@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, File, UploadFile, HTTPException
 from .. import models, database
-from ..schemas.user import UserCreate, UserBase, UserResponse
+from ..schemas.user import UserCreate, UserBase, UserResponse, LoginResponse
 from sqlalchemy.orm import Session
 import numpy as np
 from resemblyzer import VoiceEncoder, preprocess_wav
@@ -43,7 +43,7 @@ async def create_users(
     return {"message": "User created successfully", "user_id": user.id, "name": user.name, "audio": audio.filename, "audio_type": audio.content_type, "embed": embed.tolist()}
 
 
-@router.post("/login")
+@router.post("/login", response_model=LoginResponse)
 async def login_user(
     name: str = Form(...),
     audio: UploadFile = File(...),
@@ -68,14 +68,13 @@ async def login_user(
 
     UMBRAL = 0.80
     if similarity < UMBRAL:
-        raise HTTPException(status_code=401, detail=f"Acceso denegado. Similitud: {similarity:.4f}")
+        raise HTTPException(status_code=401, detail=f"Acceso denegado. Similitud: {similarity:.2f}")
     
-    return {
-        "status": "success",
-        "message": f"Bienvenido {user.name}",
-        "similarity": float(similarity)
-    
-    }
+    return LoginResponse(
+        status="Success",
+        message=f"Acceso permitido, hola {user.name}",
+        similarity=float(similarity)
+    )
 
 @router.get("/users", response_model=list[UserResponse])
 async def get_users(db: Session = Depends(database.get_db)):
