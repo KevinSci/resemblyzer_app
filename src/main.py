@@ -10,6 +10,8 @@ origins = [
     "http://localhost",
     "http://localhost:8080",
     "http://localhost:3000",
+    "https://www.syscunid.com.mx", 
+    "https://sycunid.com.mx"
 ]
 
 app.add_middleware(
