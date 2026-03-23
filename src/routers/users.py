@@ -16,9 +16,11 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.post("/register")
+@router.post("/register", response_model=UserResponse)
 async def create_users(
     name: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
     audio: UploadFile = File(...),
     db: Session = Depends(database.get_db),
 ):
@@ -32,24 +34,26 @@ async def create_users(
     try:
         wav_audio = preprocess_wav(tmp_path)
         embed = encoder.embed_utterance(wav_audio)
-
-        user = models.User(name=name, voice_emmbedding=embed.tobytes())
+        user = models.User(name=name, email=email, password=password, voice_embedding=embed.tobytes())
         db.add(user)
         db.commit()
         db.refresh(user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
         if tmp_path.exists(): tmp_path.unlink()
 
-    return {"message": "User created successfully", "user_id": user.id, "name": user.name, "audio": audio.filename, "audio_type": audio.content_type, "embed": embed.tolist()}
+    return user
 
 
 @router.post("/login", response_model=LoginResponse)
 async def login_user(
-    name: str = Form(...),
+    email: str = Form(...),
     audio: UploadFile = File(...),
     db: Session = Depends(database.get_db),
 ):
-    user = db.query(models.User).filter(models.User.name == name).first()
+    user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
@@ -63,7 +67,7 @@ async def login_user(
     finally:
         if tmp_path.exists(): tmp_path.unlink()
 
-    master_embed = np.frombuffer(user.voice_emmbedding, dtype=np.float32)
+    master_embed = np.frombuffer(user.voice_embedding, dtype=np.float32)
     similarity = np.inner(master_embed, login_embed)
 
     UMBRAL = 0.80
