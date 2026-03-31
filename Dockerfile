@@ -1,49 +1,33 @@
-# Etapa de construcción
-FROM python:3.12-slim AS builder
+# Usamos 3.12-slim por estabilidad con las librerías de audio
+FROM python:3.12-slim
 
 # Instalar uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias del sistema para resemblyzer y psycopg
+# 1. Instalar dependencias del sistema necesarias para compilar y procesar audio
+# webrtcvad requiere gcc (build-essential) y python3-dev
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libpq-dev \
+    python3-dev \
     libsndfile1 \
     ffmpeg \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar archivos de configuración de dependencias
+# 2. Copiar solo los archivos de dependencias para aprovechar el caché de Docker
 COPY pyproject.toml uv.lock ./
 
-# Instalar dependencias sin instalar el proyecto (cache layer)
-RUN uv sync --frozen --no-install-project --no-dev
-
-# Copiar el código de la aplicación
-COPY . .
-
-# Instalar el proyecto
+# 3. Instalar las dependencias de Python (aquí se compilará webrtcvad)
+# Esto se guardará en caché y no se repetirá a menos que cambies el pyproject.toml
 RUN uv sync --frozen --no-dev
 
-# Etapa final para ejecución
-FROM python:3.12-slim
+# 4. Copiar el resto del código de la aplicación
+COPY . .
 
-WORKDIR /app
-
-# Copiar dependencias del sistema necesarias para ejecución
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 \
-    libsndfile1 \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copiar el entorno virtual y el código desde el builder
-COPY --from=builder /app /app
-
-# Asegurarse de usar el entorno virtual creado por uv
+# 5. Colocar el entorno virtual en el PATH
 ENV PATH="/app/.venv/bin:$PATH"
 
-# Comando para iniciar la aplicación con Gunicorn y Uvicorn workers
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "src.main:app", "--bind", "0.0.0.0:8000"]
+# 6. Ejecutar la aplicación apuntando correctamente a src/main.py
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
