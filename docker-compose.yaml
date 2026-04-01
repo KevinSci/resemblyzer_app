@@ -2,7 +2,7 @@ services:
   app:
     build: .
     container_name: resemblyzer_api
-    restart: always
+    restart: unless-stopped
     env_file:
       - .env
     ports:
