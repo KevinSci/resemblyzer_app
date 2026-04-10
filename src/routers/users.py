@@ -24,7 +24,7 @@ async def create_users(
     audio: UploadFile = File(...),
     db: Session = Depends(database.get_db),
 ):
-    if audio.content_type not in ["audio/mpeg", "audio/wav", "audio/mp3"]:
+    if audio.content_type not in ["audio/mpeg", "audio/wav", "audio/mp3", 'audio/webm']:
         raise HTTPException(status_code=400, detail="Formato de audio invalido")
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
