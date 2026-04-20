@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import users
+from .routers import users, songs
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -25,6 +25,7 @@ app.add_middleware(
 
 # Routers (controladores)
 app.include_router(users.router)
+app.include_router(songs.router)
 
 
 @app.get("/")

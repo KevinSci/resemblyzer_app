@@ -38,7 +38,8 @@ class Song(Base):
     __tablename__ = "songs"
     id = Column(Integer, primary_key=True)
     title = Column(String)
-    duration = Integer()
+    duration = Column(Integer)
+    file_path = Column(String, nullable=False) # NUEVO: Ruta para saber dónde se guardó el mp3/wav
     album_id = Column(Integer, ForeignKey("albums.id"))
     artist_id = Column(Integer, ForeignKey("artists.id"))
 
