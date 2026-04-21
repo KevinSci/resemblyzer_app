@@ -1,11 +1,10 @@
 from pydantic import BaseModel
-from typing import Optional
 
 class SongBase(BaseModel):
     title: str
     duration: int
-    album_id: int
-    artist_id: int
+    artist_name: str
+    album_title: str
 
 class SongResponse(SongBase):
     id: int
