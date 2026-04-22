@@ -6,6 +6,7 @@ from pathlib import Path
 import uuid
 from .. import models, database
 from ..schemas.song import SongResponse
+from typing import List
 
 router = APIRouter(
     prefix="/songs",
@@ -67,3 +68,8 @@ async def play_song(song_id: int, db: Session = Depends(database.get_db)):
     if not song or not Path(song.file_path).exists():
         raise HTTPException(status_code=404, detail="Archivo no disponible.")
     return FileResponse(path=song.file_path, media_type="audio/mpeg")
+
+@router.get("/", response_model=List[SongResponse])
+async def get_all_songs(db: Session = Depends(database.get_db)):
+    songs = db.query(models.Song).all()
+    return songs
