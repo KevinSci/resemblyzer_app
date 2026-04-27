@@ -70,7 +70,7 @@ async def login_user(
     master_embed = np.frombuffer(user.voice_embedding, dtype=np.float32)
     similarity = np.inner(master_embed, login_embed)
 
-    UMBRAL = 0.80
+    UMBRAL = 0.60
     if similarity < UMBRAL:
         raise HTTPException(status_code=401, detail=f"Acceso denegado. Similitud: {similarity:.2f}")
     
